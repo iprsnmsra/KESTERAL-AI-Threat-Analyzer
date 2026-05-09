@@ -80,6 +80,29 @@ This project is built using modern web technologies to ensure speed, scalability
 * **Deployment:** [Vercel](https://vercel.com/)
 * **Package Manager:** NPM / Yarn
 
+```mermaid
+graph TD
+    %% Define Nodes
+    Client[💻 React.js Frontend Dashboard]
+    API[⚙️ Node.js / Express API Gateway]
+    DB[(🍃 MongoDB Threat Database)]
+    LLM{🧠 Gemini 2.5 Flash API}
+
+    %% Define Connections
+    Client -->|1. Submits telemetry/logs| API
+    API -->|2. Queries historical threats| DB
+    API -->|3. Sends payload for analysis| LLM
+    LLM -->|4. Returns Threat Assessment| API
+    API -->|5. Stores new threat data| DB
+    API -->|6. Sends JSON Response| Client
+
+    %% Styling
+    style Client fill:#00d8ff,stroke:#333,stroke-width:2px,color:#000
+    style API fill:#68a063,stroke:#333,stroke-width:2px,color:#000
+    style DB fill:#4db33d,stroke:#333,stroke-width:2px,color:#000
+    style LLM fill:#ff9900,stroke:#333,stroke-width:2px,color:#000
+```
+    
 ---
 
 ## 🏁 Getting Started
