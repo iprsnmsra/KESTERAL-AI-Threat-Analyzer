@@ -11,9 +11,9 @@
     <br />
     <a href="https://kestrel-ai-threat-analyzer.vercel.app"><strong>🔴 View Live Demo</strong></a>
     ·
-    <a href="https://github.com/Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer/issues">Report Bug</a>
+    <a href="https://github.com/iprsnmsra/KESTERAL-AI-Threat-Analyzer/issues">Report Bug</a>
     ·
-    <a href="https://github.com/Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer/pulls">Request Feature</a>
+    <a href="https://github.com/iprsnmsra/KESTERAL-AI-Threat-Analyzer/pulls">Request Feature</a>
   </p>
 </div>
 
@@ -22,8 +22,8 @@
 ![Vercel](https://img.shields.io/badge/vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
 ![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)
-![License](https://img.shields.io/github/license/Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer?style=for-the-badge&color=blue)
-![Repo Size](https://img.shields.io/github/repo-size/Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer?style=for-the-badge&color=green)
+![License](https://img.shields.io/github/license/iprsnmsra/KESTERAL-AI-Threat-Analyzer?style=for-the-badge&color=blue)
+![Repo Size](https://img.shields.io/github/repo-size/iprsnmsra/KESTERAL-AI-Threat-Analyzer?style=for-the-badge&color=green)
 
 </div>
 
@@ -95,7 +95,7 @@ To get a local copy up and running, follow these simple steps.
 
 1.  **Clone the Repo**
     ```bash
-    git clone [https://github.com/Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer.git](https://github.com/Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer.git)
+    git clone [https://github.com/iprsnmsra/KESTERAL-AI-Threat-Analyzer.git](https://github.com/Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer.git)
     cd KESTERAL-AI-Threat-Analyzer
     ```
 
@@ -124,7 +124,7 @@ To get a local copy up and running, follow these simple steps.
 - [ ] **Phase 4:** Docker Container Support
 - [ ] **Phase 5:** Multi-Language Localization
 
-See the [open issues](https://github.com/Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer/issues) for a full list of proposed features.
+See the [open issues](https://github.com/iprsnmsra/KESTERAL-AI-Threat-Analyzer/issues) for a full list of proposed features.
 
 ---
 
@@ -154,9 +154,9 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ## 📞 Contact
 
-**Mr-DaRkAgeNt** - [GitHub Profile](https://github.com/Mr-DaRkAgeNt)
+**iprsnmsra** - [GitHub Profile](https://github.com/iprsnmsra)
 
-Project Link: [https://github.com/Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer](https://github.com/Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer)
+Project Link: [https://github.com/iprsnmsra/KESTERAL-AI-Threat-Analyzer](https://github.com/iprsnmsra/KESTERAL-AI-Threat-Analyzer)
 
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f2ea,100:000000&height=120&section=footer" width="100%"/>
