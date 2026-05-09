@@ -168,6 +168,7 @@ Contributions are what make the open source community such an amazing place to l
 [![Star History Chart](https://api.star-history.com/svg?repos=Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer&type=Date)](https://star-history.com/#Mr-DaRkAgeNt/KESTERAL-AI-Threat-Analyzer&Date)
 
 ---
+<!-- YOLO -->.
 
 ## 📜 License
 
