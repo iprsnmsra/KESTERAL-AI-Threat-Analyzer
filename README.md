@@ -186,6 +186,3 @@ Project Link: [https://github.com/iprsnmsra/KESTERAL-AI-Threat-Analyzer](https:/
   <img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f2ea,100:000000&height=120&section=footer" width="100%"/>
 </p>
 
-
-
-Co-authored-by: Hertz-Hunter <Hertz-Hunter@users.noreply.github.com>
