@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KESTREL AI | Neural Defense</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=JetBrains+Mono:wght@300;700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #00f3ff; --secondary: #7000ff; --bg: #030014; }
@@ -46,6 +47,42 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #050510; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+        /* Download Button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(0,243,255,0.15), rgba(112,0,255,0.15));
+            border: 1px solid rgba(0,243,255,0.4);
+            color: #00f3ff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            padding: 10px 22px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+        .download-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0,243,255,0.25), rgba(112,0,255,0.25));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .download-btn:hover::before { opacity: 1; }
+        .download-btn:hover {
+            box-shadow: 0 0 24px rgba(0,243,255,0.4), 0 0 48px rgba(112,0,255,0.2);
+            border-color: rgba(0,243,255,0.8);
+            transform: translateY(-1px);
+        }
+        .download-btn:active { transform: translateY(0); }
+        .download-btn svg { flex-shrink: 0; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -177,6 +214,18 @@
 
                 </div>
             </div>
+
+            <!-- DOWNLOAD BUTTON -->
+            <div class="mt-6 flex justify-end" id="download-section">
+                <button class="download-btn" onclick="downloadReport()" id="download-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    EXPORT PDF REPORT
+                </button>
+            </div>
         </div>
 
     </main>
@@ -186,6 +235,11 @@
     </footer>
 
     <script>
+        // Global store for the latest analysis result
+        let lastReportData = null;
+        let lastScanInput  = '';
+        let lastScanMode   = '';
+        let lastScanTime   = null;
         let currentMode = 'url';
         
         function switchTab(mode) {
@@ -226,6 +280,9 @@
         }
 
         async function analyze(mode) {
+            lastScanMode  = mode;
+            lastScanInput = (mode === 'url' ? document.getElementById('inp-url') : document.getElementById('inp-msg')).value.trim();
+            lastScanTime  = new Date();
             const inputEl = mode === 'url' ? document.getElementById('inp-url') : document.getElementById('inp-msg');
             const prompt = inputEl.value.trim();
             
@@ -254,7 +311,7 @@
 
             try {
                 // Detect Preview Mode
-                const isPreview = window.location.protocol === 'file:' || window.location.protocol === 'blob:' || window.location.hostname.includes('googleusercontent');
+                const isPreview = window.location.protocol === 'file:' || window.location.protocol === 'blob:' || window.location.hostname.includes('googleusercontent') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
                 
                 let data;
                 if (isPreview) {
@@ -275,6 +332,7 @@
                 }
                 
                 clearInterval(stepInterval);
+                lastReportData = data;
                 renderResults(data);
 
             } catch (error) {
@@ -330,6 +388,246 @@
                 scoreCircle.style.strokeDashoffset = offset;
             }, 100);
         }
+
+        // -- PDF EXPORT --
+        function downloadReport() {
+            if (!lastReportData) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const W = doc.internal.pageSize.getWidth();
+            const H = doc.internal.pageSize.getHeight();
+            const ML = 18, MR = 18;
+            const CW = W - ML - MR;
+            let y = 0;
+
+            const VC = {
+                MALICIOUS:  { r:220, g:38,  b:38,  label:'MALICIOUS'  },
+                SUSPICIOUS: { r:217, g:119, b:6,   label:'SUSPICIOUS' },
+                SAFE:       { r:5,   g:150, b:105, label:'SAFE'        },
+                ERROR:      { r:107, g:114, b:128, label:'ERROR'       }
+            };
+            const vc    = VC[lastReportData.verdict] || VC.ERROR;
+            const score = lastReportData.risk_score ?? 0;
+
+            const INK      = [15,  23,  42];
+            const SUBINK   = [71,  85, 105];
+            const BORDER   = [203,213,225];
+            const STRIPE_A = [248,250,252];
+            const STRIPE_B = [255,255,255];
+            const NAVY     = [15,  23,  42];
+            const ACCENT   = [6,  182, 212];
+
+            const scanId  = 'KSRL-' + Math.random().toString(36).substring(2,9).toUpperCase();
+            const genTime = (lastScanTime || new Date()).toLocaleString('en-IN',{
+                day:'2-digit',month:'short',year:'numeric',
+                hour:'2-digit',minute:'2-digit',hour12:true
+            });
+
+            const FR = (x,yp,w,h,rgb) => { doc.setFillColor(...rgb); doc.rect(x,yp,w,h,'F'); };
+            const DR = (x,yp,w,h,rgb,lw=0.25) => {
+                doc.setDrawColor(...rgb); doc.setLineWidth(lw); doc.rect(x,yp,w,h);
+            };
+
+            function checkPage(need){ if(y+need > H-20){ addPage(); } }
+            function addPage(){ drawFooter(); doc.addPage(); drawPageHeader(); y=52; }
+
+            function drawPageHeader(){
+                FR(0,0,W,42,NAVY);
+                FR(0,0,W,3,ACCENT);
+                FR(0,39,W,3,[vc.r,vc.g,vc.b]);
+                doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(...ACCENT);
+                doc.text('KESTREL AI',ML,16);
+                doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(148,163,184);
+                doc.text('AUTONOMOUS NEURAL THREAT ENGINE',ML,22);
+                doc.text('AI-POWERED CYBERSECURITY INTELLIGENCE  |  SYSTEM V5.0',ML,27);
+                doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...ACCENT);
+                doc.text('THREAT INTELLIGENCE REPORT',W-MR,13,{align:'right'});
+                doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(148,163,184);
+                doc.text('Scan ID: '+scanId,W-MR,19,{align:'right'});
+                doc.text('Generated: '+genTime,W-MR,25,{align:'right'});
+                doc.text('CONFIDENTIAL  |  FOR AUTHORIZED USE ONLY',W-MR,31,{align:'right'});
+            }
+
+            function drawFooter(){
+                const fp = H-14;
+                FR(0,fp,W,14,NAVY);
+                FR(0,fp,W,1.5,[vc.r,vc.g,vc.b]);
+                doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(148,163,184);
+                doc.text('Kestrel AI  |  Secure Neural Defense Platform  |  Confidential & Proprietary',ML,fp+7);
+                const pn = doc.internal.getCurrentPageInfo().pageNumber;
+                doc.setTextColor(...ACCENT);
+                doc.text('Page '+pn,W-MR,fp+7,{align:'right'});
+                doc.setFontSize(5.5); doc.setTextColor(100,116,139);
+                doc.text('AI-generated report. Validate all findings with a qualified cybersecurity professional before acting.',ML,fp+11);
+            }
+
+            function sectionTitle(title){
+                checkPage(14);
+                doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...INK);
+                doc.text(title.toUpperCase(),ML,y);
+                doc.setDrawColor(...ACCENT); doc.setLineWidth(0.5); doc.line(ML,y+2,ML+CW*0.25,y+2);
+                doc.setDrawColor(...BORDER); doc.setLineWidth(0.25); doc.line(ML+CW*0.25,y+2,W-MR,y+2);
+                y += 9;
+            }
+
+            drawPageHeader();
+            y = 50;
+
+            // 1. EXECUTIVE SUMMARY CARD
+            FR(ML,y,CW,38,STRIPE_A); DR(ML,y,CW,38,BORDER); FR(ML,y,3,38,[vc.r,vc.g,vc.b]);
+            FR(ML+8,y+5,50,8,[vc.r,vc.g,vc.b]);
+            doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(255,255,255);
+            doc.text(vc.label,ML+33,y+10.5,{align:'center'});
+            doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(vc.r,vc.g,vc.b);
+            doc.text(vc.label,ML+8,y+28);
+            doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...SUBINK);
+            const subLabels={MALICIOUS:'Active threat detected — immediate action required',SUSPICIOUS:'Potential threat — proceed with caution',SAFE:'No threats detected — target appears safe',ERROR:'Scan error — please retry'};
+            doc.text(subLabels[lastReportData.verdict]||'',ML+8,y+34);
+            const rsX=W-MR-44;
+            doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...SUBINK);
+            doc.text('RISK INDEX',rsX+22,y+7,{align:'center'});
+            doc.setFont('helvetica','bold'); doc.setFontSize(30); doc.setTextColor(vc.r,vc.g,vc.b);
+            doc.text(String(score),rsX+22,y+26,{align:'center'});
+            doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...SUBINK);
+            doc.text('/ 100',rsX+22,y+32,{align:'center'});
+            y += 44;
+
+            // Segmented risk gauge
+            FR(ML,y,CW*0.33,5,[209,250,229]);
+            FR(ML+CW*0.33,y,CW*0.34,5,[254,243,199]);
+            FR(ML+CW*0.67,y,CW*0.33,5,[254,226,226]);
+            FR(ML,y,(score/100)*CW,5,[vc.r,vc.g,vc.b]);
+            const mx=ML+(score/100)*CW;
+            doc.setDrawColor(vc.r,vc.g,vc.b); doc.setLineWidth(0.7); doc.line(mx,y-1,mx,y+6);
+            doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(100,116,139);
+            doc.text('LOW RISK',ML+2,y+9);
+            doc.text('MEDIUM RISK',ML+CW/2,y+9,{align:'center'});
+            doc.text('HIGH RISK',W-MR-2,y+9,{align:'right'});
+            y += 16;
+
+            // 2. SCAN METADATA TABLE
+            sectionTitle('Scan Metadata');
+            const modeLabel=lastScanMode==='url'?'URL / Hyperlink Scan':'Text / Message Analysis';
+            const truncInput=lastScanInput.length>72?lastScanInput.substring(0,72)+'...':lastScanInput;
+            const metaRows=[
+                ['Scan Type',modeLabel],['Target',truncInput||'—'],
+                ['Scan ID',scanId],['Timestamp',genTime],
+                ['Engine','Kestrel AI  |  Gemini Neural Backend  |  System V5.0'],
+                ['Report Type','Automated Threat Intelligence  |  AI-Assisted Analysis'],
+            ];
+            metaRows.forEach(([label,val],i)=>{
+                const rowH=7.5;
+                FR(ML,y,CW,rowH,i%2===0?STRIPE_A:STRIPE_B); DR(ML,y,CW,rowH,BORDER,0.15);
+                doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...INK);
+                doc.text(label,ML+4,y+5);
+                doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...SUBINK);
+                doc.text(val,ML+50,y+5); y+=rowH;
+            });
+            y+=9;
+
+            // 3. AI ANALYSIS
+            checkPage(30); sectionTitle('AI-Generated Analysis');
+            FR(ML,y,CW,3,[vc.r,vc.g,vc.b]); y+=3;
+            const summaryText=lastReportData.summary||'No analysis available.';
+            const sLines=doc.splitTextToSize(summaryText,CW-10);
+            const sBoxH=sLines.length*5.2+10;
+            FR(ML,y,CW,sBoxH,STRIPE_A); DR(ML,y,CW,sBoxH,BORDER,0.2);
+            doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...INK);
+            doc.text(sLines,ML+5,y+7); y+=sBoxH+9;
+
+            // 4. TECHNICAL INDICATORS
+            checkPage(20); sectionTitle('Technical Indicators');
+            FR(ML,y,CW,8,NAVY);
+            doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...ACCENT);
+            doc.text('#',ML+4,y+5.5); doc.text('Detected Indicator / Flag',ML+13,y+5.5); y+=8;
+            const details=lastReportData.details||[];
+            if(!details.length){
+                FR(ML,y,CW,8,STRIPE_A); DR(ML,y,CW,8,BORDER,0.15);
+                doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(...SUBINK);
+                doc.text('No indicators detected.',ML+4,y+5.5); y+=8;
+            } else {
+                details.forEach((flag,i)=>{
+                    const fLines=doc.splitTextToSize(flag,CW-18);
+                    const rowH=Math.max(8,fLines.length*5+4);
+                    checkPage(rowH+2);
+                    FR(ML,y,CW,rowH,i%2===0?STRIPE_A:STRIPE_B); DR(ML,y,CW,rowH,BORDER,0.15);
+                    FR(ML+3,y+(rowH-5)/2,6,5,[vc.r,vc.g,vc.b]);
+                    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(255,255,255);
+                    doc.text(String(i+1),ML+6,y+(rowH-5)/2+3.5,{align:'center'});
+                    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...INK);
+                    doc.text(fLines,ML+13,y+5.5); y+=rowH;
+                });
+            }
+            y+=9;
+
+            // 5. MITIGATION STEPS
+            checkPage(20); sectionTitle('Recommended Mitigation Steps');
+            const mitigations={
+                MALICIOUS:[
+                    {step:'Do NOT interact with, click, or submit any data to this target.',priority:'CRITICAL'},
+                    {step:'Isolate affected systems from the network immediately.',priority:'CRITICAL'},
+                    {step:'Report to your IT / Security Operations Center (SOC) at once.',priority:'HIGH'},
+                    {step:'Run a full endpoint detection & response (EDR) scan on affected devices.',priority:'HIGH'},
+                    {step:'Block this domain/IP at the firewall and DNS resolver level.',priority:'HIGH'},
+                    {step:'Preserve logs and artefacts for forensic investigation.',priority:'MEDIUM'},
+                ],
+                SUSPICIOUS:[
+                    {step:'Do not enter credentials, financial info, or personal data on this target.',priority:'HIGH'},
+                    {step:'Verify legitimacy through an official, independent channel.',priority:'HIGH'},
+                    {step:'Report to your security team for secondary human review.',priority:'MEDIUM'},
+                    {step:'Monitor for unusual account activity if you already interacted.',priority:'MEDIUM'},
+                ],
+                SAFE:[
+                    {step:'No immediate action required. Target appears safe.',priority:'INFO'},
+                    {step:'Continue practising safe browsing and zero-trust hygiene.',priority:'INFO'},
+                    {step:'Re-scan periodically as threat landscapes evolve over time.',priority:'INFO'},
+                ],
+                ERROR:[
+                    {step:'Re-run the scan — a temporary network or API error may have occurred.',priority:'INFO'},
+                ]
+            };
+            const pCfg={
+                CRITICAL:{bg:[220,38,38],txt:[255,255,255]},
+                HIGH:{bg:[217,119,6],txt:[255,255,255]},
+                MEDIUM:{bg:[37,99,235],txt:[255,255,255]},
+                INFO:{bg:[71,85,105],txt:[255,255,255]},
+            };
+            FR(ML,y,CW,8,NAVY);
+            doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...ACCENT);
+            doc.text('PRIORITY',ML+4,y+5.5); doc.text('ACTION REQUIRED',ML+30,y+5.5); y+=8;
+            const steps=mitigations[lastReportData.verdict]||mitigations.ERROR;
+            steps.forEach((item,i)=>{
+                const pc=pCfg[item.priority]||pCfg.INFO;
+                const sLines2=doc.splitTextToSize(item.step,CW-35);
+                const rowH=Math.max(9,sLines2.length*5+4);
+                checkPage(rowH+2);
+                FR(ML,y,CW,rowH,i%2===0?STRIPE_A:STRIPE_B); DR(ML,y,CW,rowH,BORDER,0.15);
+                FR(ML+3,y+(rowH-6)/2,24,6,pc.bg);
+                doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...pc.txt);
+                doc.text(item.priority,ML+3+12,y+(rowH-6)/2+4.2,{align:'center'});
+                doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...INK);
+                doc.text(sLines2,ML+30,y+6); y+=rowH;
+            });
+            y+=10;
+
+            // 6. DISCLAIMER BOX
+            checkPage(22);
+            FR(ML,y,CW,18,[255,251,235]); DR(ML,y,CW,18,[251,191,36],0.4); FR(ML,y,3,18,[251,191,36]);
+            doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(146,64,14);
+            doc.text('IMPORTANT DISCLAIMER',ML+6,y+6);
+            doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(120,53,15);
+            const dText='This report is generated automatically by the Kestrel AI threat analysis engine. Findings are based on heuristic and AI pattern-matching and may not be 100% accurate. Results must be reviewed and validated by a qualified cybersecurity professional before taking any decisive action. Kestrel AI accepts no liability for decisions made solely on the basis of this report.';
+            doc.text(doc.splitTextToSize(dText,CW-10),ML+6,y+11);
+            y+=22;
+
+            // FOOTER ON ALL PAGES
+            const total=doc.internal.getNumberOfPages();
+            for(let p=1;p<=total;p++){ doc.setPage(p); drawFooter(); }
+
+            doc.save('kestrel-threat-report-'+scanId.toLowerCase()+'.pdf');
+        }
+
     </script>
 </body>
 </html>
