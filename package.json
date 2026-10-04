@@ -3,5 +3,10 @@
   "version": "1.0.0",
   "main": "index.html",
   "type": "module",
-  "dependencies": {}
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
 }
