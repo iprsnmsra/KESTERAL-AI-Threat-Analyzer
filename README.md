@@ -158,7 +158,7 @@ Never commit real values. For local development, use a Vercel-linked environment
 
 ### Vercel deployment checklist
 
-The repository includes `vercel.json`; Vercel will serve `index.html` and discover the serverless functions under `api/`. From the repository root:
+The repository includes `vercel.json`; the output directory is explicitly set to the repository root (`.`), so Vercel serves `index.html` and discovers the serverless functions under `api/`. If the Vercel dashboard has an older **Output Directory** override set to `public`, clear it or change it to `.` under **Settings → Build and Deployment**. From the repository root:
 
 ```bash
 npm install
