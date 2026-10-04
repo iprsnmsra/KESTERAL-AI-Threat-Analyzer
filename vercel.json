@@ -2,6 +2,7 @@
   "version": 2,
   "buildCommand": "npm test",
   "installCommand": "npm install",
+  "outputDirectory": ".",
   "headers": [
     {
       "source": "/(.*)",
